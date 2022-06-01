@@ -35,7 +35,15 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        /* Create User in sqlite */
+        $skpUser = new User();
+        $skpUser->name = $request->$request->name;
+        $skpUser->email = $request->$request->email;
+        $skpUser->id = "d9bcd369f7b5479daf5bd50df3b909e1";
+
+        $skpUser->save();
+
+        return $skpUser;
     }
 
     /**
@@ -47,6 +55,18 @@ class UserController extends Controller
     public function show(User $user)
     {
         //
+    }
+
+     /**
+     * Display the specified resource.
+     *
+     * @param  \App\Models\User  $user
+     * @return \Illuminate\Http\Response
+     */
+    public function get(String $email)
+    {
+        $user = DB::select('select id from users where email = :email', ['email' => $email]);
+        return $user;
     }
 
     /**

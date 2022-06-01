@@ -6,8 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public $incrementing = false;
-    protected $keyType = 'string';
     /**
      * Run the migrations.
      *
@@ -15,7 +13,13 @@ return new class extends Migration
      */
     public function up()
     {
-        //
+        Schema::create('list_users', function (Blueprint $table) {
+            $table->increments('id')->unique();
+            $table->String('title');
+            $table->String('creator');
+            $table->String('emails_list');
+            $table->timestamps();
+        });
     }
 
     /**
@@ -25,6 +29,6 @@ return new class extends Migration
      */
     public function down()
     {
-        //
+        Schema::dropIfExists('lists_users');
     }
 };

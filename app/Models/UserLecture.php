@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class User_Lecture extends Model
+class UserLecture extends Model
 {
     use HasFactory;
     public $fillable = [

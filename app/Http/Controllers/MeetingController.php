@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Meeting;
 use App\Models\Lecture;
+use App\Models\ListUsers;
 use App\Mail\Mail;
 use App\Traits\UploadTrait;
 use Illuminate\Http\Request;
@@ -23,12 +24,7 @@ class MeetingController extends Controller
     {
         $userName = "Alumno";
 
-        $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
-        
-        $response = Http::withToken(env('TOKEN'))->get($CSA_URL.'/sessions');
-        $meetings = $response ['results'];
-
-        $meetings = Meeting::all();
+        $meetings = Meeting::all()->sortByDesc('dateTime');
         
         return view('home', ['meetings' => $meetings, 'userName' => $userName]);
     }
@@ -42,10 +38,12 @@ class MeetingController extends Controller
     {
         $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
         
-        $response = Http::withToken(env(env('TOKEN')))->get($CSA_URL.'/contexts');
+        $response = Http::withToken(env('TOKEN'))->get($CSA_URL.'/contexts');
         $lectures = $response ['results'];
 
-        return view('create_meeting', ['lectures' => $lectures]);
+        $lists = ListUsers::all();
+
+        return view('create_meeting', ['lectures' => $lectures, 'lists' => $lists]);
     }
 
     /**
@@ -68,27 +66,28 @@ class MeetingController extends Controller
             'dateTimeStart.required' => 'When will the meeting end?'
         ]);
 
+        $sendMails = false;
         $title = $request->input('title');
         $datetime0 = $request->input('dateTimeStart');
         $datetime1 = $request->input('dateTimeEnd');
         
 
-        /*
-         * Sending mails
-         */
-        //$mailDetails = [
-        //    'title' => $title,
-        //    'body' => $request->input('body')
-        //];
-        //\Mail::to('luciacristobaly@gmail.com')->send(new Mail($mailDetails));
-
+        /* Sending mails */
+        $mailDetails = [];
+        if ($request->input('body') <> null){
+            $mailDetails = [
+                'title' => $title,
+                'body' => $request->input('body')
+            ];
+            $sendMails = true;
+        }
         
-        //Store in API Collaborate:
+        /* Store in API Collaborate: */
         $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
         
         $body = array("name"=> $title,
-                    "startTime"=> "2022-05-20T12:00:00.000Z",
-                    "endTime"=> "2022-05-22T12:00:00.000Z",
+                    "startTime"=> $datetime0,
+                    "endTime"=> $datetime1,
                     "allowGuest"=> true,
                     "showProfile"=> false,
                     "createdTimezone"=> "Europe/Spain",
@@ -97,21 +96,59 @@ class MeetingController extends Controller
                     "active"=> true,
                     "canEnableLargeSession"=> true
                 );
-        $url = $CSA_URL.'/sessions';
-        $response = Http::withToken(env('TOKEN'))->post($url, $body);
-        $data = json_decode($response, true);
-
-        //Esto hay que ponerlo optativo
+                $url = $CSA_URL.'/sessions';
+                $response = Http::withToken(env('TOKEN'))->post($url, $body);
+                $data = json_decode($response, true);
+                
+        /* Attach meeting to a lecture (session to a context) */
         if($request->input("lectureOwner")<>"0") {
             $body = array("id" => $data['id']);
             $url = $CSA_URL.'/contexts/'.$request->input('lectureOwner').'/sessions';
     
-            $response = Http::withToken(env('TOKEN'))->post($url,$body);
+            Http::withToken(env('TOKEN'))->post($url,$body);
+        }
+
+        /* Add attendees to the meeting */
+        $url = $CSA_URL.'/sessions/'.$data['id'].'/enrollments';
+        $email = $request->input('attendee_email');
+        if ($email != null) {
+            //Finding user by email
+            $userId = User::where('email',$email)->pluck('id')->first();;
+            $body = array(
+                "userId" => $userId,
+                "launchingRole" => "participant",
+                "editingPermission" => "reader"
+            );
+            $response =  Http::withToken(env('TOKEN'))->post($url,$body);
+
+            if ($sendMails){
+                \Mail::to($email)->send(new \App\Mail\MailSender($mailDetails));
+            }
+        }
+        if ($request->input("lists") <> "0") {
+            $list = ListUsers::where('id',$request->input("lists"))->first();
+            $users = json_decode($list['emails_list']);
+            //Link users to the meeting
+            $ids = array();
+            foreach($users as $id => $email){
+                $body = array(
+                    "userId" => $id,
+                    "launchingRole" => "participant",
+                    "editingPermission" => "reader"
+                );
+                $response =  Http::withToken(env('TOKEN'))->post($url,$body);
+
+                if ($sendMails){
+                    \Mail::to($email)->send(new \App\Mail\MailSender($mailDetails));
+                }
+            }
         }
         
+        /* Create Meeting in sqlite */
         $skpMeeting = new Meeting();
         $skpMeeting->title = $title;
         $skpMeeting->dateTime = $datetime0;
+        $skpMeeting->lecture_id = $request->input('lectureOwner');
         
         $skpMeeting->id = $data['id'];
         if ($request->file==null):
@@ -120,7 +157,7 @@ class MeetingController extends Controller
             $skpMeeting->photoName = auth()->id() . '_' . time() . '.'. $request->file->extension();  
         endif;
 
-        //Storage image
+        /* Storage image */
         if ($request->has('image')) {
             // Get image file
             $image = $request->file('image');
@@ -154,8 +191,10 @@ class MeetingController extends Controller
 
         $url = $CSA_URL.'/sessions/'.$id;
         $response = Http::withToken(env('TOKEN'))->get($url);
+        $attendees = Http::withToken(env('TOKEN'))->get($url.'/enrollments');
+ 
 
-        return view('detail_meeting', ['meeting' => $response]);
+        return view('detail_meeting', ['meeting' => $response, 'attendees' => $attendees]);
     }
 
     /**

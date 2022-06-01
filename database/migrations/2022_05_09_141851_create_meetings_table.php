@@ -16,14 +16,12 @@ return new class extends Migration
         Schema::create('meetings', function (Blueprint $table) {
             $table->String('id')->unique();
             $table->String('title');
-            
             $table->String('photoName')->nullable();
-
             $table->text('body')->nullable();
-            
             $table->dateTime('dateTime');
-
             $table->timestamps();
+
+            $table->primary('id');
         });
     }
 

@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    
     /**
      * Run the migrations.
      *
@@ -15,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('meetings', function (Blueprint $table) {
-            $table->primary('id');
+            $table->String('lecture_id')->nullable();
         });
     }
 
@@ -26,6 +25,8 @@ return new class extends Migration
      */
     public function down()
     {
-        //
+        Schema::table('meetings', function (Blueprint $table) {
+            $table->dropColumn('lectureId');
+        });
     }
 };

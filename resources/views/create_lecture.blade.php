@@ -17,11 +17,9 @@
             {!! $errors->first('title', '<small>:message</small><br>') !!}
         </div>
         <div class="col-2">
-            <label class="control-label" for="photoPathGroup" >@lang('Image'):</label>
-            <div class="custom-file" id="photoPathGroup">
-                <input type="file" class="custom-file-input" id="photoName" lang="es" name="photoName" value="{{ old('photoName') }}"/>
-                <label class="custom-file-label" for="photoName" >@lang('Upload')</label>
-            </div>
+            <label class="control-label" for="image" >@lang('Image'):</label>
+            <input type="file" class="form-control" id="image" name="image" value="{{ old('image') }}"/>
+            {!! $errors->first('image', '<small>:message</small><br>') !!}
         </div>
         <div class="col-5">
             <label class=" control-label" for="professor">@lang('Professor')*:</label>
@@ -30,40 +28,19 @@
         </div>
     </div>
     <div class="row p-3">
-        <div class="col-6">
-            <label class=" control-label" for="students">@lang('Students'):</label>
-            <table id="students" class="table">
-                <tr>
-                    {{ $num_student = 0 }}
-                    <td>
-                        <input type="email" id="{{ 'student_'.$num_student.'_email' }}" name="{{ 'student_'.$num_student.'_email' }}" class="form-control name_list" placeholder="Email"/>
-                    </td>
-                    <td> 
-                        <button name="add" id="add" class="btn btn-success">@lang('Add More')</button>
-                        {{ $num_student = $num_student + 1 }}
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </div>
-    <div class="row p-3">
         <div class="col">
-            <label class="control-label" for="datetimestartpicker">@lang('Date time start'):</label>
-            <div class="input-group date"  id="datetimestartpicker">
-                <input class="form-control" name="dateTimeStart" placeholder="MM/DD/AAAA hh:mm:ss" type="text" value="{{ old('dateTimeStart') }}"/> 
-                <span class="input-group-addon">
-                    <span class="glyphicon glyphicon-calendar"></span>
-                </span>
-            </div>
+            <label class=" control-label" for="student_list">@lang('Students (split the list by semicolon)'):</label>
+            <input type="text" id="student_email" name="student_email" class="form-control" placeholder="Email" value="{{ old('student_email') }}"/>
         </div>
         <div class="col">
-            <label class="control-label" for="datetimeendpicker">@lang('Date time end'):</label>
-            <div class="input-group date"  id="datetimeendpicker">
-                <input class="form-control" name="dateTimeEnd" placeholder="MM/DD/AAAA hh:mm:ss" type="text" value="{{ old('dateTimeEnd') }}"/> 
-                <span class="input-group-addon">
-                    <span class="glyphicon glyphicon-calendar"></span>
-                </span>
-            </div>
+            <label class="control-label" for="selectLecture">@lang('Lists'):</label>
+            <select class="custom-select" aria-label="Default select example" name="lists" id="selectList" value="{{ old('selectList') }}">
+                <option selected value="0"> Ninguna lista </option>
+                @forelse($lists as $list)
+                <option value="{{ $list['id'] }}">{{ $list['title'] }}</option>
+                @empty
+                @endforelse
+            </select>
         </div>
     </div>
     <div class="row p-3">

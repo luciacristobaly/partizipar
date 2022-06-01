@@ -16,10 +16,10 @@ return new class extends Migration
         Schema::create('users_lectures', function (Blueprint $table) {
             $table->id();
             
-            $table->unsignedBigInteger('lecture_id');
+            $table->String('lecture_id');
             $table->foreign('lecture_id')->references('id')->on('lectures');
             
-            $table->unsignedBigInteger('user_id');
+            $table->String('user_id');
             $table->foreign('user_id')->references('id')->on('users');
 
             $table->boolean('isTeacher');

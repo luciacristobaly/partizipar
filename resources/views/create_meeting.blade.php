@@ -23,8 +23,18 @@
     </div>
     <div class="row p-3">
         <div class="col">
-            <label class=" control-label" for="attendees_list">@lang('Attendees'):</label>
+            <label class=" control-label" for="attendees_list">@lang('Attendees (split the list by semicolon)'):</label>
             <input type="text" id="attendee_email" name="attendee_email" class="form-control" placeholder="Email" value="{{ old('attendee_email') }}"/>
+        </div>
+        <div class="col">
+            <label class="control-label" for="selectLecture">@lang('Lists'):</label>
+            <select class="custom-select" name="lists" id="selectList" value="{{ old('selectList') }}">
+                <option selected value="0"> Ninguna lista </option>
+                @forelse($lists as $list)
+                <option value="{{ $list['id'] }}">{{ $list['title'] }}</option>
+                @empty
+                @endforelse
+            </select>
         </div>
     </div>
     <div class="row p-3">
@@ -58,7 +68,7 @@
         </div>
         <div class="col">
             <label class="control-label" for="selectLecture">@lang('Lecture'):</label>
-            <select class="form-select text-dark" aria-label="Default select example" name="lectureOwner" id="selectLecture" value="{{ old('selectLecture') }}">
+            <select class="custom-select" aria-label="Default select example" name="lectureOwner" id="selectLecture" value="{{ old('selectLecture') }}">
                 <option selected value="0"> Ningún curso </option>
                 @forelse($lectures as $lecture)
                 <option value="{{ $lecture['id'] }}">{{ $lecture['title'] }}</option>

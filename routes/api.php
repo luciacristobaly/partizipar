@@ -30,7 +30,7 @@ Route::delete('meeting/{id}', 'MeetingController@delete');
 
 //Lectures
 Route::get('/lectures', 'LectureController@index');
-Route::get('lectures/{id}', 'LectureController@show');
+Route::get('lecture/{id}', 'LectureController@show');
 Route::post('articlelecture', 'LectureController@store');
 Route::put('lectures/{id}', 'LectureController@update');
 Route::delete('lectures/{id}', 'LectureController@delete');

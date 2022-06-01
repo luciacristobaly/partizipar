@@ -7,12 +7,12 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class Mail extends Mailable
+class MailSender extends Mailable
 {
     use Queueable, SerializesModels;
-    
+
     public $details;
-  
+
     /**
      * Create a new message instance.
      *
@@ -22,7 +22,7 @@ class Mail extends Mailable
     {
         $this->details = $details;
     }
-  
+
     /**
      * Build the message.
      *
@@ -30,7 +30,7 @@ class Mail extends Mailable
      */
     public function build()
     {
-        return $this->subject('Mail from ItSolutionStuff.com');
-                    //->view('create_meeting');
+        return $this->subject('Mail from Partiziparrrr')
+                    ->view('emails.MailSender');
     }
 }

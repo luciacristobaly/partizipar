@@ -9,8 +9,9 @@
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
         <div class="navbar-nav">
             <a class="nav-item nav-link {{ request()->routeIs('home') ? 'active' : ''}}" href="/home">@lang('Home')</a>
-            <a class="nav-item nav-link {{ request()->routeIs('lectures') ? 'active' : ''}}" href="/lectures">@lang('Lectures')</a>
-            <a class="nav-item nav-link {{ request()->routeIs('create_meeting') ? 'active' : ''}}" href="{{ route('meeting.create') }}">@lang('New meeting')</a>
+            <a class="nav-item nav-link {{ request()->routeIs('lectures') ? 'active' : '' }}{{ request()->routeIs('lecture.create') ? 'active' : '';}}  " href="/lectures">@lang('Lectures')</a>
+            <a class="nav-item nav-link {{ request()->routeIs('meeting.create') ? 'active' : ''}}" href="{{ route('meeting.create') }}">@lang('New meeting')</a>
+            <a class="nav-item nav-link {{ request()->routeIs('lists') ? 'active' : ''}}" href="{{ route('lists') }}">@lang('Lists')</a>
         </div>
     </div>
 </nav>

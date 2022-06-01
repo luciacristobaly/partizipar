@@ -3,8 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lecture;
+use App\Models\ListUsers;
+use App\Models\Meeting;
+use App\Models\User;
+use App\Models\UserLecture;
+use App\Traits\UploadTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class LectureController extends Controller
 {
@@ -18,6 +24,8 @@ class LectureController extends Controller
         $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
         $response = Http::withToken(env('TOKEN'))->get($CSA_URL.'/contexts');
         $lectures = $response ['results'];
+
+        $lectures = Lecture::all();
         
         return view('lectures', ['lectures' => $lectures]);
     }
@@ -29,7 +37,8 @@ class LectureController extends Controller
      */
     public function create()
     {
-        return view('create_lecture');
+        $lists = ListUsers::All();
+        return view('create_lecture', ['lists' => $lists]);
     }
 
     /**
@@ -61,15 +70,49 @@ class LectureController extends Controller
                     "courseRoomEnabled"=> true
                 );
         $url = $CSA_URL.'/contexts';
-        //$response = Http::withToken(env('TOKEN'))->post($url, $body);
-        //$data = json_decode($response, true);
-
+        $response = Http::withToken(env('TOKEN'))->post($url, $body);
+        $data = json_decode($response, true);
 
         $skpLecture = new Lecture();
         $skpLecture->title = $title;
-        //$skpLecture->id = $data['id'];
-        $skpLecture->id = "a4f93138abc046cebbd4428843c602b3";
+        $skpLecture->id = $data['id'];
+
+        // Storage image 
+        if ($request->input('image')<>null) {
+            $image = $request->file('image');
+            $name = Str::slug($request->input('name')).'_'.time();
+            $folder = '/uploads/images/';
+            $filePath = $folder . $name. '.' . $image->getClientOriginalExtension();
+            $this->uploadOne($image, $folder, 'public', $name);
+            $skpMeeting->photoName = $filePath;
+        }
+
         $skpLecture->save();
+        
+        if($request->input("lists") <> "0") {
+            $list = ListUsers::where('id',$request->input("lists"))->first();
+            $users = json_decode($list['emails_list']);
+            //Link users to the lecture
+            foreach($users as $id => $email){
+                $user = new UserLecture();
+                $user->lecture_id = '0efeb80beed242c6943cf646d8f4d2f4';//$data['id'];
+                $user->user_id = $id;
+                $user->isTeacher = false;
+
+                $user->save();
+            }
+        }
+
+        //Add the teacher
+
+        $teacherId = User::where('email',$request->input("professor"))->pluck('id')->first();
+        $teacher = new UserLecture();
+        $teacher->lecture_id = '0efeb80beed242c6943cf646d8f4d2f4';//$data['id];
+        $teacher->user_id = $teacherId;
+        $teacher->isTeacher = true;
+        
+        $teacher->save();
+
         return LectureController::index();
     }
 
@@ -79,10 +122,11 @@ class LectureController extends Controller
      * @param  \App\Models\Lecture  $lecture
      * @return \Illuminate\Http\Response
      */
-    public function show(Lecture $lecture)
+    public function show($id)
     {
-        $lecture = Lecture::find($lecture->id);
-        return view('/');
+        $lecture = Lecture::find($id);
+        $meetings = Meeting::where('lecture_id',$id)->pluck('title');
+        return view('detail_lecture', ['meetings' => $meetings, 'lecture' => $lecture]);
     }
 
     /**

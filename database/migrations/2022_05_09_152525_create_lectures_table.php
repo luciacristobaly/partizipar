@@ -15,12 +15,11 @@ return new class extends Migration
     {
         Schema::create('lectures', function (Blueprint $table) {
             $table->String('id')->unique();
-
             $table->String('title');
-
             $table->String('photoName')->nullable();
-
             $table->timestamps();
+
+            $table->primary('id');
         });
     }
 
