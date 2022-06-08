@@ -89,7 +89,7 @@ class ListUsersController extends Controller
      */
     public function edit()//List $list)
     {
-        //
+        return "edit list";
     }
 
     /**
@@ -110,8 +110,9 @@ class ListUsersController extends Controller
      * @param  \App\Models\List  $list
      * @return \Illuminate\Http\Response
      */
-    public function destroy()//List $list)
+    public function destroy($id)
     {
-        //
+        $response = ListUsers::where('id',$id)->delete();
+        return ListUsersController::index();
     }
 }

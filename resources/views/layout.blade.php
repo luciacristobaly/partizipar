@@ -17,15 +17,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.7.14/css/bootstrap-datetimepicker.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
 
-    <!-- Dselect -->
-    <link rel="stylesheet" href="css/dselect.css" />
-
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Responsive tables -->
+    <script src="jquery-3.6.0.min.js" type="text/javascript"></script>
+    <script src="jquery.dataTables.min.js" type="text/javascript"></script>
+    
 
     
     <style>
@@ -121,6 +119,38 @@
             color: #3698f9 !important;
         }
 
+        .users-icon {
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer {
+            position: fixed;
+            left: 20;
+            bottom: 40px;
+            width: 100%;
+            color:white;
+            text-align: left;
+        }
+
+        .accept-list-button {
+            height: 100%;
+            position: relative;
+        }
+
+        .center {
+            margin: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+        }
+
+        .modal-body div{float:left; width: 100%}
+        .modal-body div p{float:left; width: 20%; font-weight: 600;}
+        .modal-body div span{float:left; width: 80%}
+
     </style>
 
 </head>
@@ -145,10 +175,30 @@
     });
 </script> 
 <script src="//cdn.ckeditor.com/4.14.1/standard/ckeditor.js"></script> <!-- email --> 
-<script type="text/javascript">
-    $(document).ready(function () {
-        $('.ckeditor').ckeditor();   
-    });
+
+
+<script>
+    jQuery(document).ready(function($) {
+        $('#listsTable').DataTable({
+            searching: false,
+            responsive: true,
+            "autoWidth": false,
+        });
+        var table = $('#listsTable').DataTable();
+        $('#listsTable tbody').on('click', 'tr', function () {
+            console.log('Modal opened');
+            $(".listname span").text(table.row(this).data()[0]);
+            $(".students span").text(table.row(this).data()[1]);
+            $("#showList").modal("show");
+        });
+    } );
 </script>
 
+<script  src="app.js"></script>
+<script>
+    $('.addAttr').click(function() {
+        var id = $(this).data('id');      
+        $('#id').val(id);  
+    });
+</script>
 </html>

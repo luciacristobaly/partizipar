@@ -7,6 +7,7 @@ use App\Models\Lecture;
 use App\Models\ListUsers;
 use App\Mail\Mail;
 use App\Traits\UploadTrait;
+use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -68,9 +69,8 @@ class MeetingController extends Controller
 
         $sendMails = false;
         $title = $request->input('title');
-        $datetime0 = $request->input('dateTimeStart');
-        $datetime1 = $request->input('dateTimeEnd');
-        
+        $datetime0 = (new DateTime($request->input('dateTimeStart')))->format('c');
+        $datetime1 = (new DateTime($request->input('dateTimeEnd')))->format('c');
 
         /* Sending mails */
         $mailDetails = [];
@@ -99,7 +99,7 @@ class MeetingController extends Controller
                 $url = $CSA_URL.'/sessions';
                 $response = Http::withToken(env('TOKEN'))->post($url, $body);
                 $data = json_decode($response, true);
-                
+        
         /* Attach meeting to a lecture (session to a context) */
         if($request->input("lectureOwner")<>"0") {
             $body = array("id" => $data['id']);
@@ -205,7 +205,15 @@ class MeetingController extends Controller
      */
     public function edit($id)
     {
-        return view('meetings.edit', ['meeting' => $meeting]);
+        $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
+        
+        $response = Http::withToken(env('TOKEN'))->get($CSA_URL.'/contexts');
+        $lectures = $response ['results'];
+
+        $lists = ListUsers::all();
+
+        $meeting = Meeting::where('id',$id)->first();
+        return view('edit_meeting', ['meeting' => $meeting, 'lists' => $lists, 'lectures' => $lectures]);
     }
 
     /**
@@ -217,9 +225,9 @@ class MeetingController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $data = $request->all();
-        $id->update($data);
-        return response()->json($article, 200);
+        //$data = $request->all();
+        //$id->update($data);
+        return "Meeting ".$id." updated";//response()->json($article, 200);
     }
 
     /**
@@ -230,8 +238,8 @@ class MeetingController extends Controller
      */
     public function destroy($id)
     {
-        Meeting::find($id)->delete();
-        return response()->json(null, 204);
+        //Meeting::find($id)->delete();
+        return "delete meeting ".$id;//response()->json(null, 204);
     }
 
     public function fetch()

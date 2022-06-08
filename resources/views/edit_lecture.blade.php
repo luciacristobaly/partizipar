@@ -1,19 +1,19 @@
 @extends('layout')
 
-@section('title', 'New lecture')
+@section('title', 'Lectures')
 
 @section('content')
 
 <!-- create new lecture -->
-<form class="container-fluid form-group" action="/lectures" method="POST">
+<form class="container-fluid form-group" action="{{ route('lecture.update', $lecture['id']) }}" method="PATCH"">
     <div class="row">
-        <h4>@lang('New lecture')</h4>
+        <h4>@lang('Edit lecture')</h4>
     </div>
     @csrf
     <div class="row p-3">
         <div class="col-5">
             <label class=" control-label" for="title">@lang('Title')*:</label>
-            <input type="text" id="title" name="title" class="form-control" placeholder="@lang('Title')" value="{{ old('title') }}"/>
+            <input type="text" id="title" name="title" class="form-control" placeholder="{{$lecture['title']}}" value="{{ old('title') }}"/>
             {!! $errors->first('title', '<small>:message</small><br>') !!}
         </div>
         <div class="col-3">
@@ -29,7 +29,7 @@
     </div>
     <div class="row p-3">
         <div class="col">
-            <label class=" control-label" for="student_list">@lang('Students (split the list by semicolon)'):</label>
+            <label class=" control-label" for="student_list">@lang('New students (split the list by semicolon)'):</label>
             <input type="text" id="student_email" name="student_email" class="form-control" placeholder="Email" value="{{ old('student_email') }}"/>
         </div>
         <div class="col">

@@ -51,15 +51,14 @@ class LectureController extends Controller
     {
         request()->validate([
             'title' => 'required',
-            'professor' => 'required',//|email'
+            'professor' => 'required',//|email',
+            //'image' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
         ], [
             'title.required' => 'Don\'t forget to set a title for your lecture',
             'professor.required' => 'Who is the director of this lecture?'
         ]);
 
         $title = $request->input('title');
-        $datetime0 = $request->input('dateTimeStart');
-        $datetime1 = $request->input('dateTimeEnd');
 
         //Store in API Collaborate:
         $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
@@ -78,14 +77,14 @@ class LectureController extends Controller
         $skpLecture->id = $data['id'];
 
         // Storage image 
-        if ($request->input('image')<>null) {
+        /*if ($request->has('image')) {
             $image = $request->file('image');
             $name = Str::slug($request->input('name')).'_'.time();
             $folder = '/uploads/images/';
             $filePath = $folder . $name. '.' . $image->getClientOriginalExtension();
             $this->uploadOne($image, $folder, 'public', $name);
             $skpMeeting->photoName = $filePath;
-        }
+        }*/
 
         $skpLecture->save();
         
@@ -95,7 +94,7 @@ class LectureController extends Controller
             //Link users to the lecture
             foreach($users as $id => $email){
                 $user = new UserLecture();
-                $user->lecture_id = '0efeb80beed242c6943cf646d8f4d2f4';//$data['id'];
+                $user->lecture_id = $data['id'];
                 $user->user_id = $id;
                 $user->isTeacher = false;
 
@@ -107,7 +106,7 @@ class LectureController extends Controller
 
         $teacherId = User::where('email',$request->input("professor"))->pluck('id')->first();
         $teacher = new UserLecture();
-        $teacher->lecture_id = '0efeb80beed242c6943cf646d8f4d2f4';//$data['id];
+        $teacher->lecture_id = $data['id'];
         $teacher->user_id = $teacherId;
         $teacher->isTeacher = true;
         
@@ -125,7 +124,8 @@ class LectureController extends Controller
     public function show($id)
     {
         $lecture = Lecture::find($id);
-        $meetings = Meeting::where('lecture_id',$id)->pluck('title');
+        $meetings = Meeting::where('lecture_id',$id)->pluck('id');
+
         return view('detail_lecture', ['meetings' => $meetings, 'lecture' => $lecture]);
     }
 

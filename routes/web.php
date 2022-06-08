@@ -39,10 +39,15 @@ Route::post('/lists', [ListUsersController::class, 'store'])->name('list.store')
 
 // PUT or patch
 Route::get('/meeting/edit/{id}', [MeetingController::class, 'edit'])->name('meeting.edit');
-Route::patch('/meeting/{id}', [MeetingController::class, 'update'])->name('meeting.update');
+Route::patch('/meetings/{id}', [MeetingController::class, 'update'])->name('meeting.update');
+
+Route::get('/list/edit/{id}', [ListUsersController::class, 'edit'])->name('list.edit');
+Route::patch('/list/update/{id}', [ListUsersController::class, 'update'])->name('list.update');
 
 // DELETE
-Route::delete('/meeting/{id}', [MeetingController::class, 'destroy'])->name('meeting.delete');
+Route::get('/meetings/{id}/delete', [MeetingController::class, 'destroy'])->name('meeting.delete');
+Route::post('/lectures/{id}/delete', [LectureController::class, 'destroy'])->name('lecture.delete');
+Route::post('/lists/{id}/delete', [ListUsersController::class, 'destroy'])->name('list.delete');
 
 Route::get('/send-mail', function () {
    

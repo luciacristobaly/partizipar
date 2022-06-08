@@ -28,14 +28,14 @@
                         </div>
                         <div class="row">
                             <div class="col-10">
-                                <p style="padding-bottom: 2px">{{ $meeting->dateTime }}<p>
+                                <p style="padding-bottom: 2px"> {{ $meeting->dateTime }} <p>
                             </div>
                             <div class="col-2">
                                 <?php  $url = 'https://eu.bbcollab.com/collab/api/csa/sessions/'.$meeting->id.'/enrollments';
                                     $attendees = json_encode(Http::withToken(env('TOKEN'))->get($url)['results']);
 
                                 ?>
-                                <i class="fa fa-users" data-toggle="popover" data-trigger="hover" title="@lang('Attendees'):" data-content="{{ $attendees }}"></i>
+                                <i class="fa fa-users users-icon" style="margin-right:0px" data-toggle="popover" data-trigger="hover" title="@lang('Attendees'):" data-content="{{ $attendees }}"></i>
                             </div>
                         </div>
                     </div>

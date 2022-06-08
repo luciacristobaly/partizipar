@@ -22,13 +22,16 @@
             @forelse ($lectures as $lecture)
             @csrf
                 <div class="card mb-3 bg-dark">
+                    <a href="{{ route('lecture.show', $lecture->id) }}" class="stretched-link text-white"></a>
                     @if ($lecture['photoName'])
                         <img class="card-img-top" src="{{ url($lecture['photoName']) }}" alt="Foto de la asignatura">
                     @else
                         <img class="card-img-top" src="https://www.arqhys.com/general/wp-content/uploads/2011/07/Roles-de-la-inform%C3%A1tica.jpg" alt="Foto de la asignatura">
                     @endif
                     <div class="row content">
-                        <h5 href="{{ route('lecture.show', $lecture->id) }}" class="stretched-link text-white">{{ $lecture->title }}</h5>
+                        <div class="row" style="margin-left:0px">
+                            <h4> {{ strlen($lecture->title)>24 ? substr($lecture->title, 0, 20).'...' : $lecture->title }} </h4>
+                        </div>
                     </div>
                 </div> 
             @empty

@@ -25,12 +25,15 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::get('meetings', 'MeetingController@index');
 Route::get('meeting/{id}', 'MeetingController@show');
 Route::post('articlemeetings', 'MeetingController@store');
-Route::put('meeting/{id}', 'MeetingController@update');
-Route::delete('meeting/{id}', 'MeetingController@delete');
+Route::put('meeting/edit/{id}', 'MeetingController@update');
+Route::delete('meetings/{id}/delete', 'MeetingController@delete');
 
 //Lectures
 Route::get('/lectures', 'LectureController@index');
 Route::get('lecture/{id}', 'LectureController@show');
 Route::post('articlelecture', 'LectureController@store');
 Route::put('lectures/{id}', 'LectureController@update');
-Route::delete('lectures/{id}', 'LectureController@delete');
+Route::delete('lectures/{id}/delete', 'LectureController@delete');
+
+//Lists
+Route::delete('lists/{id}/delete', 'ListUsers@delete');
