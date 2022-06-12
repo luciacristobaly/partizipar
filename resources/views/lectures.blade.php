@@ -9,7 +9,7 @@
         <h3>@lang('Lectures')</h3>
     </div>
     <div class="col-8" style="margin-top: 15px">
-        <a href="{{ route('lecture.create') }}" role="button" class="btn btn-outline-primary bg-white text-dark font-weight-bold"> NUEVO CURSO </a> 
+        <a href="{{ route('lecture.create', app()->getLocale()) }}" role="button" class="btn btn-outline-primary bg-white text-dark font-weight-bold"> @lang('NEW LECTURE') </a> 
     </div>
 </div>
 
@@ -22,7 +22,7 @@
             @forelse ($lectures as $lecture)
             @csrf
                 <div class="card mb-3 bg-dark">
-                    <a href="{{ route('lecture.show', $lecture->id) }}" class="stretched-link text-white"></a>
+                    <a href="{{ route('lecture.show', [app()->getLocale(), $lecture->id]) }}" class="stretched-link text-white"></a>
                     @if ($lecture['photoName'])
                         <img class="card-img-top" src="{{ url($lecture['photoName']) }}" alt="Foto de la asignatura">
                     @else

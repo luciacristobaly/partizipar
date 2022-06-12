@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
 
 class LectureController extends Controller
 {
+    use UploadTrait;
     /**
      * Display a listing of the resource.
      *
@@ -51,11 +52,9 @@ class LectureController extends Controller
     {
         request()->validate([
             'title' => 'required',
-            'professor' => 'required',//|email',
-            //'image' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
+            'image' => 'image|mimes:jpeg,png,jpg,gif,JPG|max:2048'
         ], [
-            'title.required' => 'Don\'t forget to set a title for your lecture',
-            'professor.required' => 'Who is the director of this lecture?'
+            'title.required' => "Don't forget to set a title for your lecture",
         ]);
 
         $title = $request->input('title');
@@ -69,22 +68,35 @@ class LectureController extends Controller
                     "courseRoomEnabled"=> true
                 );
         $url = $CSA_URL.'/contexts';
-        $response = Http::withToken(env('TOKEN'))->post($url, $body);
-        $data = json_decode($response, true);
+        //$response = Http::withToken(env('TOKEN'))->post($url, $body);
+        //$data = json_decode($response, true);
 
         $skpLecture = new Lecture();
         $skpLecture->title = $title;
-        $skpLecture->id = $data['id'];
+        $skpLecture->id = 'd589693021c548ffb96c1a9be8c72490';//$data['id'];
+        $skpLecture->list_id = $request->input("lists");
 
-        // Storage image 
-        /*if ($request->has('image')) {
+        if ($request->file==null):
+            $skpLecture->photoName = "https://www.arqhys.com/general/wp-content/uploads/2011/07/Roles-de-la-inform%C3%A1tica.jpg";
+        else:
+            $skpLecture->photoName = auth()->id() . '_' . time() . '.'. $request->file->extension();  
+        endif;
+        
+        /* Storage image */ 
+        if ($request->has('image')) {
+            // Get image file
             $image = $request->file('image');
+            // Make a image name based on user name and current timestamp
             $name = Str::slug($request->input('name')).'_'.time();
+            // Define folder path
             $folder = '/uploads/images/';
+            // Make a file path where image will be stored [ folder path + file name + file extension]
             $filePath = $folder . $name. '.' . $image->getClientOriginalExtension();
+            // Upload image
             $this->uploadOne($image, $folder, 'public', $name);
-            $skpMeeting->photoName = $filePath;
-        }*/
+            // Set user profile image path in database to filePath
+            $skpLecture->photoName = $filePath;
+        }
 
         $skpLecture->save();
         
@@ -94,7 +106,7 @@ class LectureController extends Controller
             //Link users to the lecture
             foreach($users as $id => $email){
                 $user = new UserLecture();
-                $user->lecture_id = $data['id'];
+                $user->lecture_id = 'd589693021c548ffb96c1a9be8c72490';//$data['id'];
                 $user->user_id = $id;
                 $user->isTeacher = false;
 
@@ -104,15 +116,15 @@ class LectureController extends Controller
 
         //Add the teacher
 
-        $teacherId = User::where('email',$request->input("professor"))->pluck('id')->first();
+        /*$teacherId = User::where('email',$request->input("professor"))->pluck('id')->first();
         $teacher = new UserLecture();
-        $teacher->lecture_id = $data['id'];
+        $teacher->lecture_id = 'd589693021c548ffb96c1a9be8c72490';//$data['id'];
         $teacher->user_id = $teacherId;
         $teacher->isTeacher = true;
         
-        $teacher->save();
+        $teacher->save();*/
 
-        return LectureController::index();
+        return redirect()->route('lectures');
     }
 
     /**
@@ -121,10 +133,10 @@ class LectureController extends Controller
      * @param  \App\Models\Lecture  $lecture
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($locale, $id)
     {
         $lecture = Lecture::find($id);
-        $meetings = Meeting::where('lecture_id',$id)->pluck('id');
+        $meetings = Meeting::where('lecture_id',$id)->pluck('photoName','id');
 
         return view('detail_lecture', ['meetings' => $meetings, 'lecture' => $lecture]);
     }
@@ -135,9 +147,11 @@ class LectureController extends Controller
      * @param  \App\Models\Lecture  $lecture
      * @return \Illuminate\Http\Response
      */
-    public function edit(Lecture $lecture)
+    public function edit($locale, $id)
     {
-        return view('lecture.edit', ['lecture' => $lecture]);
+        $lecture = Lecture::find($id);
+        $lists = ListUsers::all();
+        return view('edit_lecture', ['lecture' => $lecture, 'lists' => $lists]);
     }
 
     /**
@@ -147,11 +161,9 @@ class LectureController extends Controller
      * @param  \App\Models\Lecture  $lecture
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Lecture $lecture)
+    public function update($locale)
     {
-        $data = $request->all();
-        $lecture->update($data);
-        return redirect('/');
+        redirect('/home');
     }
 
     /**
@@ -160,9 +172,26 @@ class LectureController extends Controller
      * @param  \App\Models\Lecture  $lecture
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Lecture $lecture)
+    public function destroy($id)
     {
+
+        //Delete meetings in the lecture
+        $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
+        while (null != $meetingId = Meeting::where('lecture_id',$id)->pluck('id')->first())
+        {
+            Http::withToken(env('TOKEN'))->delete($CSA_URL.'/sessions/'.$meetingId);
+            Meeting::find($meetingId)->delete();
+        }
+
+        //Delete lecture
+        while (null != $userLect = UserLecture::where('lecture_id',$id)->first()) 
+        {
+            $userLect->delete();
+        } 
+
+        $lecture = Lecture::find($id);
         $lecture->delete();
-        return redirect('/');
+
+        return redirect()->route('lectures');
     }
 }

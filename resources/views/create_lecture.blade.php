@@ -5,7 +5,7 @@
 @section('content')
 
 <!-- create new lecture -->
-<form class="container-fluid form-group" action="/lectures" method="POST">
+<form class="container-fluid form-group" action="{{ route('lecture.store', app()->getLocale()) }}" method="POST" enctype="multipart/form-data" role="form">
     <div class="row">
         <h4>@lang('New lecture')</h4>
     </div>

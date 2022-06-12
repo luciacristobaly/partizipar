@@ -7,7 +7,7 @@
 
 <!-- Create new list -->
 <div class="row">
-    <form class="container-fluid form-group" action="/lists" method="POST">
+    <form class="container-fluid form-group" action="{{route('lists', app()->getLocale())}}" method="POST">
         @csrf
         <div class="row">
             <div class="col-4">
@@ -30,59 +30,46 @@
         </div>
     </form>
 </div>
-<!-- list all the lists -->
-<div class="row">
-    <h3>@lang('Available lists')</h3>
+
+<!-- Successfull update box -->
+@if(\Session::has('success'))
+<div class="alert alert-success">
+    <p>{{ \Session::get('success') }}</p>
 </div>
-<table class="table table-dark table-hover display" id="listsTable">
+@endif
+<!-- list all the lists -->
+@if(count($lists)>0)
+<table class="table table-dark table-hover" id="listsTable">
     <thead>
-        <tr class="d-flex">
-            <th class="col-8">@lang('Name of the list')</th>
-            <th class="col-2 text-center">@lang('Number of students')</th>
-            <th class="col-2 text-center">@lang('Actions')</th>
+        <tr>
+            <th>@lang('Click')</th>
+            <th >@lang('Name of the list')</th>
+            <th>@lang('Last update')</th>
+            <th>@lang('Number of students')</th>
+            <th></th>
         </tr>
     </thead>
     <tbody>
-        @forelse ($lists as $list)
-        <tr class="d-flex">
-            <td class="col-8"> {{ $list['title'] }} </td>
-            <td class="col-2 text-center"> {{ count(explode(",",$list['emails_list'])) }}</td>
-            <td class="col-2 text-center"> 
-                <a class="btn"  href="{{ route('list.edit', $list->id) }}"><i class="fa fa-pencil pencil-icon pr-1 text-white"></i></a>
-                <a href="javascript:;" data-toggle="modal" data-id="$list->id" data-target="#DeleteListModal"><i class="text-danger fa fa-trash trash-icon pl-1"></i> </a>
+        @foreach ($lists as $list)
+        <tr>
+            <th> <a href="{{ route('list.edit', [app()->getLocale(), $list->id]) }}" class="text-white"><i class="fa fa-arrow-circle-right arrow-circle-right-icon pr-1 text-white fa-lg"></i></a>
+            <th> {{ $list->title }} </th>
+            <td> {{ date_format(date_create($list['updated_at']), 'd/m/Y g:i A') }} </td>
+            <td> {{ count(explode(",",$list['emails_list'])) }}</td>
+            <td> 
+                <button type="button" class="btn delete" data-toggle="modal" data-id="{{$list->id}}" data-target="#DeleteListModal" ><i class="text-danger fa fa-trash trash-icon pl-1 "></i></button>
             </td>
         </tr>
-        @empty
-            <h4>No tienes listas.</h4>
-        @endforelse
+        @endforeach
     </tbody>
 </table>
-
-<!-- List users modal -->
-<div class="modal fade" id="showList" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <!-- Modal content-->
-        <div class="modal-content">
-            <!-- Modal header -->
-            <div class="modal-header">
-                <input type=hidden id="id" name=id>
-                <h4 id="showList" class="modal-title text-dark">@lang('List details'):</h4>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-            </div>
-
-            <!-- Modal body -->
-            <div class="modal-body text-dark">
-                <div class="listname"><p>@lang('List name'): </p><span></span></div>
-                <div class="students"><p>@lang('Students'): </p><span></span></div>
-            </div>
-
-            <!-- Modal footer -->
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-dismiss="modal">@lang('Close')</button>
-            </div>
-        </div>
+@else
+<div class="row text-center">
+    <div class="col">
+        <h4>@lang("There's nothing here yet... Let's create your first list!")</h4>
     </div>
 </div>
+@endif
 
 <!-- Delete modal -->
 <div class="modal fade" id="DeleteListModal" tabindex="-1" role="dialog" aria-labelledby="DeleteListModal" aria-hidden="true">
@@ -96,18 +83,17 @@
         </div>
         
         <!-- Modal body -->
-        <form action="{{ route('list.delete', $list->id) }}" method="post">
         {{ csrf_field() }}
-            <div class="modal-body text-dark">
-                @lang('Are you sure you want to delete the selected list?')
-            </div>
-        
-            <!-- Modal footer -->
-            <div class="modal-footer">
-                <button type="button" class="btn btn-danger" data-dismiss="modal">No</button>
-                <button class="btn btn-default" type=submit>@lang('Yes')</button>
-            </div>
-        </form>
+        <div class="modal-body text-dark">
+            @lang('Are you sure you want to delete this list?')
+            @lang('You will also delete the list from the meetings or lectures linked').
+        </div>
+    
+        <!-- Modal footer -->
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger" data-dismiss="modal">No</button>
+            <a type="button" class="btn btn-default" href="">@lang('Yes')</a>
+        </div>
     </div>
   </div>
 </div>
@@ -115,18 +101,32 @@
 
 @endsection
 
-<script>
-    jQuery(document).ready(function($) {
-    $('#listsTable').DataTable({
-        searching: false,
-        responsive: true,
+@push('scripts')
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        var table = $(['#listsTable']).DataTable();
+
+        //Start Delete Record
+        table.on('click', '.delete', function() {
+
+            $tr = $(this).closest('tr');
+            if ($($tr).hasClass('child')) {
+                $tr = $tr.prev('.parent');
+            }
+
+            var data = table.row($tr).data();
+            console.log(data);
+
+            $('#title').val(data[1]);
+            #('#emails').val(data[2]);
+
+            $('#deleteForm').attr('action', '/list/edit/'+data[0]);
+            $('#DeleteListModal').modal('show');
+
+        })
     });
-    var table = $('#listsTable').DataTable();
-    $('#listsTable tbody').on('click', 'tr', function () {
-        //console.log(table.row(this).data());
-        $(".listname span").text(table.row(this).data()[0]);
-        $(".students span").text(table.row(this).data()[1]);
-        $("#showList").modal("show");
-    });
-} );
-</script>
+
+-->
+@endpush

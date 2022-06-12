@@ -32,7 +32,7 @@ Route::delete('meetings/{id}/delete', 'MeetingController@delete');
 Route::get('/lectures', 'LectureController@index');
 Route::get('lecture/{id}', 'LectureController@show');
 Route::post('articlelecture', 'LectureController@store');
-Route::put('lectures/{id}', 'LectureController@update');
+Route::put('lectures/edit/{id}', 'LectureController@update');
 Route::delete('lectures/{id}/delete', 'LectureController@delete');
 
 //Lists

@@ -5,9 +5,14 @@
 @section('content')
 
 <!-- create new lecture -->
-<form class="container-fluid form-group" action="{{ route('lecture.update', $lecture['id']) }}" method="PATCH"">
-    <div class="row">
-        <h4>@lang('Edit lecture')</h4>
+<form class="container-fluid form-group" action="{{ route('lecture.update', [app()->getLocale(), $lecture['id']]) }}" method="PATCH">
+<div class="row">
+        <div class="col-10"><h4> @lang('Edit lecture')</h4></div>
+        <div class="col-2 font-weight-bold d-flex align-items-end">
+            <a class="btn btn-md btn-danger text-white" href="javascript:;" data-toggle="modal" data-id="$lecture" data-target="#DeleteLectureModal">
+                @lang('DELETE')<i class="text-white fa fa-trash trash-icon pl-1"></i>
+            </a>
+        </div>
     </div>
     @csrf
     <div class="row p-3">
@@ -46,7 +51,7 @@
     <div class="row p-3">
         <div class="col">
             <div class="row form-group text-center float-left">
-                <a href="/lectures" id="cancel" name="cancel" class="btn btn-outline-secondary">@lang('CANCEL')</a>
+            <button onclick="history.back(-1)" class="btn btn-outline-secondary">@lang('CANCEL')</button>
             </div>
         </div>
         <div class="col">
@@ -56,4 +61,32 @@
         </div>
     </div>
 </form>  
+
+<!-- Delete modal -->
+<div class="modal fade" id="DeleteLectureModal" tabindex="-1" role="dialog" aria-labelledby="DeleteLectureModal" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <!-- Modal Header -->
+        <div class="modal-header dark-text">
+            <input type=hidden id="id" name=id>
+            <h4 id="DeleteLectureModal" class="modal-title text-dark">@lang('WARNING!')</h4>
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        
+        <!-- Modal body -->
+        {{ csrf_field() }}
+        <div class="modal-body text-dark">
+            @lang('Are you sure you want to delete this lecture?')
+            @lang('You will also delete all meetings of this lecture').
+        </div>
+    
+        <!-- Modal footer -->
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
+            <a type="button" class="btn btn-danger" href="{{ route('lecture.delete', [app()->getLocale(), $lecture->id]) }}">@lang('Yes')</a>
+        </div>
+    </div>
+  </div>
+</div>
+ <!-- Modal -->
 @endsection

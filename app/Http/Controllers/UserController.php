@@ -39,7 +39,6 @@ class UserController extends Controller
         $skpUser = new User();
         $skpUser->name = $request->$request->name;
         $skpUser->email = $request->$request->email;
-        $skpUser->id = "d9bcd369f7b5479daf5bd50df3b909e1";
 
         $skpUser->save();
 

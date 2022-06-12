@@ -7,6 +7,9 @@
     <title>@yield('title', 'Partizipar')</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css">
 
+    <!-- Data tables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.12.1/css/dataTables.bootstrap4.min.css">
+
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -20,12 +23,6 @@
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
-    <!-- Responsive tables -->
-    <script src="jquery-3.6.0.min.js" type="text/javascript"></script>
-    <script src="jquery.dataTables.min.js" type="text/javascript"></script>
-    
-
-    
     <style>
         .ative a {
             color: white;
@@ -115,10 +112,6 @@
             display: none;
         }
 
-        .popover {
-            color: #3698f9 !important;
-        }
-
         .users-icon {
             position: relative;
             z-index: 1;
@@ -151,54 +144,81 @@
         .modal-body div p{float:left; width: 20%; font-weight: 600;}
         .modal-body div span{float:left; width: 80%}
 
+        .modal.right .modal-dialog {
+            position: fixed;
+            margin: auto;
+            width: 320px;
+            height: 100%;
+            -webkit-transform: translate3d(0%, 0, 0);
+                -ms-transform: translate3d(0%, 0, 0);
+                -o-transform: translate3d(0%, 0, 0);
+                    transform: translate3d(0%, 0, 0);
+        }
+
+        .modal.right .modal-content {
+            height: 100%;
+            overflow-y: auto;
+        }
+        
+        .modal.right .modal-body {
+            padding: 15px 15px 80px;
+        }
+            
+        .modal.right.fade .modal-dialog {
+            right: -320px;
+            -webkit-transition: opacity 0.3s linear, right 0.3s ease-out;
+            -moz-transition: opacity 0.3s linear, right 0.3s ease-out;
+                -o-transition: opacity 0.3s linear, right 0.3s ease-out;
+                    transition: opacity 0.3s linear, right 0.3s ease-out;
+        }
+        
+        .modal.right.fade.in .modal-dialog {
+            right: 0;
+        }
+
     </style>
 
 </head>
 <body class="container bg-dark text-white">
-    @include('partials.nav')
+    
+        @include('partials.nav')
 
-    @yield('content')
-    <script>
-        $(document).ready(function(){
-            $('[data-toggle="popover"]').popover();
-        });
-    </script>
+        @yield('content')
+        
+            
+        </script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.15.1/moment.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.7.14/js/bootstrap-datetimepicker.min.js"></script>
+        <script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.12.1/js/dataTables.bootstrap4.min.js"></script>
+        <script type="text/javascript">
+            $(function() {
+                $('#datetimestartpicker').datetimepicker();
+                $('#datetimeendpicker').datetimepicker();
+            });
+            </script> 
+        <script src="//cdn.ckeditor.com/4.14.1/standard/ckeditor.js"></script> <!-- email --> 
+
+
+        <script>
+            jQuery(document).ready(function($) {
+                $('#listsTable').DataTable({
+                    searching: false,
+                    responsive: true,
+                    "autoWidth": false,
+                });
+                var table = $('#listsTable').DataTable();
+                $('#listsTable tbody').on('click', 'tr', function () {
+                    console.log('Modal opened');
+                    $(".listname span").text(table.row(this).data()[0]);
+                    $(".students span").text(table.row(this).data()[1]);
+                    $("#showList").modal("show");
+                });
+            } );
+        </script>
+        
+        @stack('scripts')
 </body>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.15.1/moment.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.7.14/js/bootstrap-datetimepicker.min.js"></script>
-<script type="text/javascript">
-    $(function() {
-        $('#datetimestartpicker').datetimepicker();
-        $('#datetimeendpicker').datetimepicker();
-    });
-</script> 
-<script src="//cdn.ckeditor.com/4.14.1/standard/ckeditor.js"></script> <!-- email --> 
-
-
-<script>
-    jQuery(document).ready(function($) {
-        $('#listsTable').DataTable({
-            searching: false,
-            responsive: true,
-            "autoWidth": false,
-        });
-        var table = $('#listsTable').DataTable();
-        $('#listsTable tbody').on('click', 'tr', function () {
-            console.log('Modal opened');
-            $(".listname span").text(table.row(this).data()[0]);
-            $(".students span").text(table.row(this).data()[1]);
-            $("#showList").modal("show");
-        });
-    } );
-</script>
-
-<script  src="app.js"></script>
-<script>
-    $('.addAttr').click(function() {
-        var id = $(this).data('id');      
-        $('#id').val(id);  
-    });
-</script>
 </html>

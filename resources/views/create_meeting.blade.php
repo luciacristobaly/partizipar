@@ -4,7 +4,7 @@
 
 @section('content')
 <!-- create new meeting -->
-<form class="container-fluid form-group" action="{{ route('meeting.store') }}" method="POST" enctype="multipart/form-data" role="form">
+<form class="container-fluid form-group" action="{{ route('meeting.store', app()->getLocale()) }}" method="POST" enctype="multipart/form-data" role="form">
     <div class="row">
         <h4> @lang('New meeting')</h4>
     </div>
@@ -29,7 +29,7 @@
         <div class="col">
             <label class="control-label" for="selectLecture">@lang('Lists'):</label>
             <select class="custom-select" name="lists" id="selectList" value="{{ old('selectList') }}">
-                <option selected value="0"> Ninguna lista </option>
+                <option selected value="0"> @lang('Any list') </option>
                 @forelse($lists as $list)
                 <option value="{{ $list['id'] }}">{{ $list['title'] }}</option>
                 @empty
@@ -69,7 +69,7 @@
         <div class="col">
             <label class="control-label" for="selectLecture">@lang('Lecture'):</label>
             <select class="custom-select" aria-label="Default select example" name="lectureOwner" id="selectLecture" value="{{ old('selectLecture') }}">
-                <option selected value="0"> Ningún curso </option>
+                <option selected value="0"> @lang('Any lecture')</option>
                 @forelse($lectures as $lecture)
                 <option value="{{ $lecture['id'] }}">{{ $lecture['title'] }}</option>
                 @empty

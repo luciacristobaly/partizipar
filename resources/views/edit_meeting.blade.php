@@ -4,7 +4,7 @@
 
 @section('content')
 <!-- edit meeting -->
-<form class="container-fluid form-group" action="{{ route('meeting.update', $meeting['id']) }}" method="PATCH" enctype="multipart/form-data" role="form">
+<form class="container-fluid form-group" action="{{ route('meeting.update', [app()->getLocale(), $meeting['id']]) }}" method="PATCH" enctype="multipart/form-data" role="form">
     <div class="row">
         <div class="col-10"><h4> @lang('Edit meeting')</h4></div>
         <div class="col-2 font-weight-bold d-flex align-items-end">
@@ -17,7 +17,7 @@
     <div class="row p-3">
         <div class="col">
             <label class=" control-label" for="title">@lang('Title')*:</label>
-            <input type="text" id="title" name="title" class="form-control" placeholder="{{ $meeting['name'] }}" value="{{ $meeting['name'] }}"/>
+            <input type="text" id="title" name="title" class="form-control" placeholder="{{ $meeting['name'] }}" value="<?= $meeting['name'] ?>"/>
             {!! $errors->first('title', '<small>:message</small><br>') !!}
         </div>
         <div class="col">
@@ -120,8 +120,8 @@
     
         <!-- Modal footer -->
         <div class="modal-footer">
-            <button type="button" class="btn btn-danger" data-dismiss="modal">No</button>
-            <a type="button" class="btn btn-default" href="{{ route('meeting.delete', $meeting->id) }}">@lang('Yes')</a>
+            <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
+            <a type="button" class="btn btn-danger" href="{{ route('meeting.delete', [app()->getLocale(), $meeting->id]) }}">@lang('Yes')</a>
         </div>
     </div>
   </div>

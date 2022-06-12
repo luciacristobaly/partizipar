@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Meeting;
 use App\Models\Lecture;
 use App\Models\ListUsers;
+use App\Models\User;
 use App\Mail\Mail;
 use App\Traits\UploadTrait;
 use DateTime;
@@ -21,11 +22,9 @@ class MeetingController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index($userName)
     {
-        $userName = "Alumno";
-
-        $meetings = Meeting::all()->sortByDesc('dateTime');
+        $meetings = Meeting::all()->sortBy('dateTime');
         
         return view('home', ['meetings' => $meetings, 'userName' => $userName]);
     }
@@ -37,10 +36,7 @@ class MeetingController extends Controller
      */
     public function create()
     {
-        $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
-        
-        $response = Http::withToken(env('TOKEN'))->get($CSA_URL.'/contexts');
-        $lectures = $response ['results'];
+        $lectures = Lecture::all();
 
         $lists = ListUsers::all();
 
@@ -60,9 +56,8 @@ class MeetingController extends Controller
             'dateTimeStart' => 'required',
             'dateTimeEnd' => 'required',
             'image' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
-            //'manager' => 'manager|email'
         ], [
-            'title.required' => 'Don\'t forget to set a title for your meeting',
+            'title.required' => "Don't forget to set a title for your meeting",
             'dateTimeStart.required' => 'When will the meeting take place?',
             'dateTimeStart.required' => 'When will the meeting end?'
         ]);
@@ -71,6 +66,7 @@ class MeetingController extends Controller
         $title = $request->input('title');
         $datetime0 = (new DateTime($request->input('dateTimeStart')))->format('c');
         $datetime1 = (new DateTime($request->input('dateTimeEnd')))->format('c');
+
 
         /* Sending mails */
         $mailDetails = [];
@@ -86,8 +82,8 @@ class MeetingController extends Controller
         $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
         
         $body = array("name"=> $title,
-                    "startTime"=> $datetime0,
-                    "endTime"=> $datetime1,
+                    "startTime"=> substr($datetime0, 0, 19).'.000Z',
+                    "endTime"=> substr($datetime1, 0, 19).'.000Z',
                     "allowGuest"=> true,
                     "showProfile"=> false,
                     "createdTimezone"=> "Europe/Spain",
@@ -96,40 +92,91 @@ class MeetingController extends Controller
                     "active"=> true,
                     "canEnableLargeSession"=> true
                 );
-                $url = $CSA_URL.'/sessions';
-                $response = Http::withToken(env('TOKEN'))->post($url, $body);
-                $data = json_decode($response, true);
+        $url = $CSA_URL.'/sessions';
+        $response = Http::withToken(env('TOKEN'))->post($url, $body);
+        $data = json_decode($response, true);
         
         /* Attach meeting to a lecture (session to a context) */
         if($request->input("lectureOwner")<>"0") {
             $body = array("id" => $data['id']);
-            $url = $CSA_URL.'/contexts/'.$request->input('lectureOwner').'/sessions';
+            $url_lecture = $CSA_URL.'/contexts/'.$request->input('lectureOwner').'/sessions';
     
-            Http::withToken(env('TOKEN'))->post($url,$body);
+            Http::withToken(env('TOKEN'))->post($url_lecture,$body);
+
+            //Check if the lecture has a list to add attendees
+            $lecture_list = Lecture::where('id', $request->input('lectureOwner'))->pluck('list_id');
+            if ($lecture_list[0] <> '0') {
+                $url = $CSA_URL.'/sessions/'.$data['id'].'/enrollments';
+                $list = ListUsers::where('id',$lecture_list)->first();
+                $users = json_decode($list['emails_list']);
+                //Link users to the meeting
+                $ids = array();
+                foreach($users as $id => $email){
+                    $body = array(
+                        "userId" => $id,
+                        "launchingRole" => "participant",
+                        "editingPermission" => "reader"
+                    );
+                    $response =  Http::withToken(env('TOKEN'))->post($url,$body);
+    
+                    if ($sendMails){
+                        \Mail::to($email)->send(new \App\Mail\MailSender($mailDetails));
+                    }
+                }
+            }
         }
 
         /* Add attendees to the meeting */
+        $emails = str_replace(' ','',$request->input('attendee_email'));
+        $emails = explode(';',$emails);
         $url = $CSA_URL.'/sessions/'.$data['id'].'/enrollments';
-        $email = $request->input('attendee_email');
-        if ($email != null) {
-            //Finding user by email
-            $userId = User::where('email',$email)->pluck('id')->first();;
-            $body = array(
-                "userId" => $userId,
-                "launchingRole" => "participant",
-                "editingPermission" => "reader"
-            );
-            $response =  Http::withToken(env('TOKEN'))->post($url,$body);
+        if ( $emails[0]<>"" ){
 
-            if ($sendMails){
-                \Mail::to($email)->send(new \App\Mail\MailSender($mailDetails));
+            $users = array();
+            foreach ($emails as $email) {
+                echo "emtramos";
+                $userId = User::where('email',$email)->pluck('id')->first();
+                if ($userId==null) 
+                {
+                    $body = array(
+                        "lastName"=> "Unknown",
+                        "firstName"=> "Unknown",
+                        "displayName"=> substr($email,0,strlen($email)-10),
+                        "email"=> $email
+                    );
+                    $url = $CSA_URL.'/users';
+                    $user = Http::withToken(env('TOKEN'))->post($url,$body);
+                    echo $body;
+                    $skpUser = new User();
+                    $skpUser->name = "Unknown";
+                    $skpUser->email = $email;
+                    $skpUser->id = $user['id'];
+                    
+                    $skpUser->save();
+                }
+                $users[$userId] = $email;
+            }
+            
+            foreach ($users as $id => $email) {
+                //Finding user by email
+                $userId = User::where('email',$email)->pluck('id')->first();;
+                $body = array(
+                    "userId" => $userId,
+                    "launchingRole" => "participant",
+                    "editingPermission" => "reader"
+                );
+                $response =  Http::withToken(env('TOKEN'))->post($url,$body);
+                
+                if ($sendMails){
+                    \Mail::to($email)->send(new \App\Mail\MailSender($mailDetails));
+                }
             }
         }
+
         if ($request->input("lists") <> "0") {
             $list = ListUsers::where('id',$request->input("lists"))->first();
             $users = json_decode($list['emails_list']);
             //Link users to the meeting
-            $ids = array();
             foreach($users as $id => $email){
                 $body = array(
                     "userId" => $id,
@@ -149,13 +196,23 @@ class MeetingController extends Controller
         $skpMeeting->title = $title;
         $skpMeeting->dateTime = $datetime0;
         $skpMeeting->lecture_id = $request->input('lectureOwner');
+        $skpMeeting->list_id = $request->input('lists');
         
         $skpMeeting->id = $data['id'];
-        if ($request->file==null):
+        if ($request->file==null & $skpMeeting->lecture_id == '0')
+        {
             $skpMeeting->photoName = "https://www.arqhys.com/general/wp-content/uploads/2011/07/Roles-de-la-inform%C3%A1tica.jpg";
-        else:
+        }
+        elseif ($skpMeeting->lecture_id <> '0')
+        {
+            $lecturePhoto = Lecture::where('id',$skpMeeting['lecture_id'])->pluck('photoName');
+            $skpMeeting->photoName = $lecturePhoto[0];
+        }
+        else
+        {
             $skpMeeting->photoName = auth()->id() . '_' . time() . '.'. $request->file->extension();  
-        endif;
+        }
+        
 
         /* Storage image */
         if ($request->has('image')) {
@@ -176,7 +233,7 @@ class MeetingController extends Controller
         $skpMeeting->save();
 
         
-        return MeetingController::index();
+        return redirect()->route('home', app()->getLocale());
     }
 
     /**
@@ -185,7 +242,7 @@ class MeetingController extends Controller
      * @param  \App\Models\Meeting  $meeting
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(String $locale, String $id)
     {
         $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
 
@@ -193,7 +250,6 @@ class MeetingController extends Controller
         $response = Http::withToken(env('TOKEN'))->get($url);
         $attendees = Http::withToken(env('TOKEN'))->get($url.'/enrollments');
  
-
         return view('detail_meeting', ['meeting' => $response, 'attendees' => $attendees]);
     }
 
@@ -203,7 +259,7 @@ class MeetingController extends Controller
      * @param  \App\Models\Meeting  $meeting
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit($locale, $id)
     {
         $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
         
@@ -223,7 +279,7 @@ class MeetingController extends Controller
      * @param  \App\Models\Meeting  $meeting
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update($locale, $id)
     {
         //$data = $request->all();
         //$id->update($data);
@@ -236,10 +292,13 @@ class MeetingController extends Controller
      * @param  \App\Models\Meeting  $meeting
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($locale, $id)
     {
-        //Meeting::find($id)->delete();
-        return "delete meeting ".$id;//response()->json(null, 204);
+        $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
+        Http::withToken(env('TOKEN'))->delete($CSA_URL.'/sessions/'.$id);
+
+        Meeting::find($id)->delete();
+        return redirect()->route('home', app()->getLocale());
     }
 
     public function fetch()
