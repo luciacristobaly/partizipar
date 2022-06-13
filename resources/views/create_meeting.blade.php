@@ -15,11 +15,6 @@
             <input type="text" id="title" name="title" class="form-control" placeholder="@lang('Title')" value="{{ old('title') }}"/>
             {!! $errors->first('title', '<small>:message</small><br>') !!}
         </div>
-        <div class="col">
-            <label class=" control-label" for="manager">@lang('Manager')*:</label>
-            <input type="text" id="manager" name="manager" class="form-control" placeholder="@lang('Manager')" value="{{ old('manager') }}"/>
-            {!! $errors->first('manager', '<small>:message</small><br>') !!}
-        </div>
     </div>
     <div class="row p-3">
         <div class="col">
@@ -85,7 +80,7 @@
     <div class="row p-3">
         <div class="col">
             <div class="form-group text-center float-left">
-            <a href="/home" id="cancel" name="cancel" class="btn btn-outline-secondary">@lang('CANCEL')</a>
+            <a href="{{ route('home', app()->getLocale()) }}" id="cancel" name="cancel" class="btn btn-outline-secondary">@lang('CANCEL')</a>
             </div>
         </div>
         <div class="col">

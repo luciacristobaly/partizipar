@@ -5,7 +5,7 @@
 @section('content')
 
 
-<form class="container-fluid form-group" action="{{ route('list.update', [app()->getLocale(), $list->id]) }}" method="PATCH" enctype="multipart/form-data" role="form">
+<form class="container-fluid form-group" action="{{ route('list.update', [app()->getLocale(), $list->id, 'edit']) }}" method="PATCH" enctype="multipart/form-data" role="form">
 @csrf
 <div class="row"> 
     <div class="col">
@@ -22,7 +22,6 @@
                     </div>
                 </div>
             </div>
-        </div>
     </div>
 </div>
 {!! $errors->first('email', '<div class="alert alert-danger"><p>No es un email válido</p></div>') !!}
@@ -34,6 +33,7 @@
                 <th >@lang('Number')</th>
                 <th>@lang('Name')</th>
                 <th>@lang('Email')</th>
+                <th>@lang('Actions')</th>
             </tr>
         </thead>
         <tbody>
@@ -43,6 +43,9 @@
                     <th> {{ $cont }} </th>
                     <td> {{ $name }} </td>
                     <td> {{ $email }}</td>
+                    <td> 
+                        <a href="{{route('list.update', [app()->getLocale(), $list->id, $email])}}" class="btn"><i class="fa fa-trash trash-icon text-danger"></i></a>
+                    </td>
                 </tr>
             @endforeach
             <tr>
@@ -50,7 +53,7 @@
                 <th> {{ $cont }} </th>
                 <td> <input type="text" class="form-control" placeholder="@lang('New student')" id="name" name="name"></textarea> </td>
                 <td> <input type="text" class="form-control" placeholder="@lang('Email')" id="email" name="email"></textarea> </td>
-                <td> <button type="submit" id="submit" name="submit" class="btn"><i class="fa fa-check-circle check-circle-icon text-success fa-2x"></i></button></td>
+                <td> <button type="submit" id="submit" name="submit" class="btn"><i class="fa fa-check-circle check-circle-icon text-success"></i></button></td>
             </tr>
         </tbody>
     </table>

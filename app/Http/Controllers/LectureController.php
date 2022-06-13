@@ -22,9 +22,8 @@ class LectureController extends Controller
      */
     public function index()
     {
-        $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
-        $response = Http::withToken(env('TOKEN'))->get($CSA_URL.'/contexts');
-        $lectures = $response ['results'];
+        //$CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
+        //$response = Http::withToken(env('TOKEN'))->get($CSA_URL.'/contexts');
 
         $lectures = Lecture::all();
         
@@ -59,7 +58,7 @@ class LectureController extends Controller
 
         $title = $request->input('title');
 
-        //Store in API Collaborate:
+        /*Store in API Collaborate:
         $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
         
         $body = array("name"=> $title,
@@ -68,12 +67,14 @@ class LectureController extends Controller
                     "courseRoomEnabled"=> true
                 );
         $url = $CSA_URL.'/contexts';
-        //$response = Http::withToken(env('TOKEN'))->post($url, $body);
-        //$data = json_decode($response, true);
+        $response = Http::withToken(env('TOKEN'))->post($url, $body);
+        $data = json_decode($response, true);
+        $lectureId = $data['id'];*/
+        $lectureId = substr(str_shuffle(str_repeat($x='0123456789abcdefghijklmnopqrstuvwxyz', ceil(32/strlen($x)) )),1,32);
 
         $skpLecture = new Lecture();
         $skpLecture->title = $title;
-        $skpLecture->id = 'd589693021c548ffb96c1a9be8c72490';//$data['id'];
+        $skpLecture->id = $lectureId;
         $skpLecture->list_id = $request->input("lists");
 
         if ($request->file==null):
@@ -106,7 +107,7 @@ class LectureController extends Controller
             //Link users to the lecture
             foreach($users as $id => $email){
                 $user = new UserLecture();
-                $user->lecture_id = 'd589693021c548ffb96c1a9be8c72490';//$data['id'];
+                $user->lecture_id = $lectureId;
                 $user->user_id = $id;
                 $user->isTeacher = false;
 
@@ -118,7 +119,7 @@ class LectureController extends Controller
 
         /*$teacherId = User::where('email',$request->input("professor"))->pluck('id')->first();
         $teacher = new UserLecture();
-        $teacher->lecture_id = 'd589693021c548ffb96c1a9be8c72490';//$data['id'];
+        $teacher->lecture_id = $lectureId;
         $teacher->user_id = $teacherId;
         $teacher->isTeacher = true;
         
@@ -138,7 +139,9 @@ class LectureController extends Controller
         $lecture = Lecture::find($id);
         $meetings = Meeting::where('lecture_id',$id)->pluck('photoName','id');
 
-        return view('detail_lecture', ['meetings' => $meetings, 'lecture' => $lecture]);
+        $list_users = ListUsers::all();
+
+        return view('detail_lecture', ['meetings' => $meetings, 'lecture' => $lecture, 'list_users' => $list_users]);
     }
 
     /**
@@ -161,9 +164,16 @@ class LectureController extends Controller
      * @param  \App\Models\Lecture  $lecture
      * @return \Illuminate\Http\Response
      */
-    public function update($locale)
+    public function update($locale, $id, Request $request)
     {
-        redirect('/home');
+        $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
+
+        //Edit lecture in DB
+        $lecture = Lecture::where('id', $id)->first();
+        $lecture->title = $request['title'] <> '' ? $request['title'] : $lecture->title;
+        $lecture->save();
+
+        return LectureController::show($locale, $id);
     }
 
     /**

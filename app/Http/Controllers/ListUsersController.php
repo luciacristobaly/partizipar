@@ -115,100 +115,130 @@ class ListUsersController extends Controller
      * @param  \App\Models\List  $list
      * @return \Illuminate\Http\Response
      */
-    public function update($locale, $id, Request $request)
+    public function update($locale, $id, $removeEmail, Request $request)
     {
-        /*request()->validate([
-            'email' => 'email:rfc,dns'
-        ]);*/
         $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
-
         $list = ListUsers::where('id',$id)->first();
         $emails = json_decode($list['emails_list']);
         $edited = false;
+        $newEmailList = array();
 
-        if ( $request['title']!= null && $list['title'] <> $request['title'] ){
-            $edited = true;
-            $list->title = $request['title'];
-        }
-        $m = array();
-        if( $request['name']<>null && $request['email']<>null) {
-
-            $userId = User::where('email',$request['email'])->pluck('id')->first();
-            $newEmailList = array();
-            if ($userId == null)
-            {
-                $fullName = explode(' ',$request['name']);
-                $lastName = count($fullName) > 1 ? $fullName[1] : 'Unknown';
-                $body = array(
-                    "lastName"=> "Unknown",
-                    "firstName"=> $fullName[0],
-                    "displayName"=> $request['name'],
-                    "email"=> $request['email']
-                );
-                $url = $CSA_URL.'/users';
-                $newUser = Http::withToken(env('TOKEN'))->post($url,$body);
-                
-                $skpUser = new User();
-                $skpUser->name = $request['name'];
-                $skpUser->email = $request['email'];
-                $skpUser->id = $newUser['id'];
-
-                $skpUser->save();
-                
-                $userId = $newUser['id'];
-
-            }
-            
-            //Make sure the user won't be twice in the list
-            $found = false;
+        if ($removeEmail <> 'edit'){
+            $removeId = '';
             foreach ($emails as $i => $email_) {
-                if ($email_ == $request['email']) {
-                    $found = true;
+                if ($email_ <> $removeEmail) {
+                    $newEmailList[$i] = $email_;
+                } else {
+                    $removeId = $i;
+                    $edited = true;
                 }
-                $newEmailList[$i] = $email_;
             }
-            
-            //Add new user to the list
-            if ( !$found ) {
-                $newEmailList[$userId] = $request['email'];
-                
-                //Update the meetings and lectures
-                $id_lectures = Lecture::where('list_id', $id)->pluck('id');
-                $id_meetings = Meeting::where('list_id', $id)->pluck('id');
+            $list->emails_list = $newEmailList;
 
-                foreach ($id_lectures as $id_lect) 
+            //Update the meetings and lectures
+            $id_lectures = Lecture::where('list_id', $id)->pluck('id');
+            $id_meetings = Meeting::where('list_id', $id)->pluck('id');
+
+            foreach ($id_lectures as $id_lect) 
+            {
+                $m = Meeting::where('lecture_id', $id_lect)->pluck('id');
+                $id_meetings = $id_meetings->concat($m);
+            }
+
+            foreach($id_meetings as $meetingId )
+            {
+                $url = $CSA_URL.'/sessions/'.$meetingId.'/enrollments';
+                $response =  Http::withToken(env('TOKEN'))->get($url);
+                foreach($response['results'] as $enrollment)
                 {
-                    $m = Meeting::where('lecture_id', $id_lect)->pluck('id');
-                    $id_meetings = $id_meetings->concat($m);
+                    if ($enrollment['userId'] == $removeId) Http::withToken(env('TOKEN'))->delete($url.'/'.$enrollment['id']);
                 }
+            }
+        } else {
 
-                foreach($id_meetings as $meetingId )
+            if ( $request['title'] <> null && $list['title'] <> $request['title'] ){
+                $edited = true;
+                $list->title = $request['title'];
+            }
+            if( $request['name'] <> null && $request['email'] <> null ) {
+
+                $userId = User::where('email',$request['email'])->pluck('id')->first();
+                if ($userId == null)
                 {
+                    $fullName = explode(' ',$request['name']);
+                    $lastName = count($fullName) > 1 ? $fullName[1] : 'Unknown';
                     $body = array(
-                        "userId" => $userId,
-                        "launchingRole" => "participant",
-                        "editingPermission" => "reader"
+                        "lastName"=> $lastName,
+                        "firstName"=> $fullName[0],
+                        "displayName"=> $request['name'],
+                        "email"=> $request['email']
                     );
-                    $url = $CSA_URL.'/sessions/'.$meetingId.'/enrollments';
-                    $response =  Http::withToken(env('TOKEN'))->post($url,$body);
-    
-                    //Send notification to users
-                    $meeting = Meeting::where('id',$meetingId)->first();
-                    if ($meeting['body'] <> null){
-                        $mailDetails = [
-                            'title' => $meeting['title'],
-                            'body' => $meeting['body']
-                        ];
-                        \Mail::to($email)->send(new \App\Mail\MailSender($mailDetails));
+                    $url = $CSA_URL.'/users';
+                    $newUser = Http::withToken(env('TOKEN'))->post($url,$body);
+                    
+                    $skpUser = new User();
+                    $skpUser->name = $request['name'];
+                    $skpUser->email = $request['email'];
+                    $skpUser->id = $newUser['id'];
+
+                    $skpUser->save();
+                    
+                    $userId = $newUser['id'];
+
+                }
+                
+                //Make sure the user won't be twice in the list
+                $found = false;
+                foreach ($emails as $i => $email_) {
+                    if ($email_ == $request['email']) {
+                        $found = true;
+                    }
+                    $newEmailList[$i] = $email_;
+                }
+                
+                //Add new user to the list
+                if ( !$found ) {
+                    $newEmailList[$userId] = $request['email'];
+                    
+                    //Update the meetings and lectures
+                    $id_lectures = Lecture::where('list_id', $id)->pluck('id');
+                    $id_meetings = Meeting::where('list_id', $id)->pluck('id');
+
+                    foreach ($id_lectures as $id_lect) 
+                    {
+                        $m = Meeting::where('lecture_id', $id_lect)->pluck('id');
+                        $id_meetings = $id_meetings->concat($m);
+                    }
+
+                    foreach($id_meetings as $meetingId )
+                    {
+                        $body = array(
+                            "userId" => $userId,
+                            "launchingRole" => "participant",
+                            "editingPermission" => "reader"
+                        );
+                        $url = $CSA_URL.'/sessions/'.$meetingId.'/enrollments';
+                        $response =  Http::withToken(env('TOKEN'))->post($url,$body);
+        
+                        //Send notification to users
+                        $meeting = Meeting::where('id',$meetingId)->first();
+                        if ($meeting['body'] <> null){
+                            $mailDetails = [
+                                'title' => $meeting['title'],
+                                'body' => $meeting['body']
+                            ];
+                            \Mail::to($email)->send(new \App\Mail\MailSender($mailDetails));
+                        }
                     }
                 }
-            }
 
-            $edited = true;
-            $list->emails_list = $newEmailList;
+                $edited = true;
+                $list->emails_list = $newEmailList;
+            }
         }
         if ($edited) $list->save();
-        return redirect()->back();
+        
+        return redirect(route('list.edit', [app()->getLocale(), $id]));
     }
 
     /**
@@ -219,6 +249,39 @@ class ListUsersController extends Controller
      */
     public function destroy($locale, $id)
     {
+        $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
+
+        //Update the meetings and lectures
+        $id_lectures = Lecture::where('list_id', $id)->pluck('id');
+
+        $id_meetings = Meeting::where('list_id', $id)->pluck('id');
+        
+        foreach ($id_lectures as $id_lect) 
+        {
+            $updateLecture = Lecture::where('id', $id_lect)->first();
+            $updateLecture->list_id = '0';
+            $updateLecture->save();
+
+            $m = Meeting::where('lecture_id', $id_lect)->pluck('id');
+            $m = $m->diff($id_meetings);
+            $id_meetings = $id_meetings->concat($m);
+        }
+
+        foreach($id_meetings as $meetingId )
+        {
+            $updateMeeting = Meeting::where('id', $meetingId)->first();
+            $updateMeeting->list_id = '0';
+            $updateMeeting->save();
+
+            $url = $CSA_URL.'/sessions/'.$meetingId.'/enrollments/';
+            $response =  Http::withToken(env('TOKEN'))->get($url);
+            foreach($response['results'] as $enrollment)
+            {
+                Http::withToken(env('TOKEN'))->delete($url.$enrollment['id']);
+            }
+        }
+
+        //Delete list from DB
         $response = ListUsers::where('id',$id)->delete();
         return redirect(route('lists', app()->getLocale()));
     }

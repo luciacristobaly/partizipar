@@ -50,13 +50,13 @@ Route::group([
 
     // PUT or patch
     Route::get('/meeting/edit/{id}', [MeetingController::class, 'edit'])->name('meeting.edit');
-    Route::get('/meetings/{id}', [MeetingController::class, 'update'])->name('meeting.update');
+    Route::get('/meetings/edit/{id}/update/{enrollment}', [MeetingController::class, 'update'])->name('meeting.update');
 
     Route::get('/lectures/edit/{id}', [LectureController::class, 'edit'])->name('lecture.edit');
-    Route::get('/lectures/{id}', [LectureController::class, 'update'])->name('lecture.update');
+    Route::get('/lectures/edit/{id}/update/{enrollment}', [LectureController::class, 'update'])->name('lecture.update');
 
     Route::get('/list/edit/{id}', [ListUsersController::class, 'edit'])->name('list.edit');
-    Route::get('/list/update/{id}', [ListUsersController::class, 'update'])->name('list.update');
+    Route::get('/list/update/{id}/{email}', [ListUsersController::class, 'update'])->name('list.update');
 
     // DELETE
     Route::get('/meetings/{id}/delete', [MeetingController::class, 'destroy'])->name('meeting.delete');

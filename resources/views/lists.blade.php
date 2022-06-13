@@ -57,8 +57,11 @@
             <td> {{ date_format(date_create($list['updated_at']), 'd/m/Y g:i A') }} </td>
             <td> {{ count(explode(",",$list['emails_list'])) }}</td>
             <td> 
-                <button type="button" class="btn delete" data-toggle="modal" data-id="{{$list->id}}" data-target="#DeleteListModal" ><i class="text-danger fa fa-trash trash-icon pl-1 "></i></button>
+                <a href="{{route('list.delete', [app()->getLocale(), $list->id])}}" class="btn"><i class="fa fa-trash trash-icon text-danger"></i></a>
             </td>
+            <!--<td> 
+                <button type="button" class="btn delete" data-toggle="modal" id="{{$list->id}}" data-target="#DeleteListModal" ><i class="text-danger fa fa-trash trash-icon pl-1 "></i></button>
+            </td>-->
         </tr>
         @endforeach
     </tbody>

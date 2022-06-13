@@ -98,10 +98,10 @@ class MeetingController extends Controller
         
         /* Attach meeting to a lecture (session to a context) */
         if($request->input("lectureOwner")<>"0") {
-            $body = array("id" => $data['id']);
+            /*$body = array("id" => $data['id']);
             $url_lecture = $CSA_URL.'/contexts/'.$request->input('lectureOwner').'/sessions';
     
-            Http::withToken(env('TOKEN'))->post($url_lecture,$body);
+            Http::withToken(env('TOKEN'))->post($url_lecture,$body);*/
 
             //Check if the lecture has a list to add attendees
             $lecture_list = Lecture::where('id', $request->input('lectureOwner'))->pluck('list_id');
@@ -130,11 +130,10 @@ class MeetingController extends Controller
         $emails = str_replace(' ','',$request->input('attendee_email'));
         $emails = explode(';',$emails);
         $url = $CSA_URL.'/sessions/'.$data['id'].'/enrollments';
-        if ( $emails[0]<>"" ){
+        if ( $emails[0] <> "" ){
 
             $users = array();
             foreach ($emails as $email) {
-                echo "emtramos";
                 $userId = User::where('email',$email)->pluck('id')->first();
                 if ($userId==null) 
                 {
@@ -146,7 +145,7 @@ class MeetingController extends Controller
                     );
                     $url = $CSA_URL.'/users';
                     $user = Http::withToken(env('TOKEN'))->post($url,$body);
-                    echo $body;
+
                     $skpUser = new User();
                     $skpUser->name = "Unknown";
                     $skpUser->email = $email;
@@ -197,6 +196,7 @@ class MeetingController extends Controller
         $skpMeeting->dateTime = $datetime0;
         $skpMeeting->lecture_id = $request->input('lectureOwner');
         $skpMeeting->list_id = $request->input('lists');
+        $skpMeeting->body = $request->input('body')<>null ? $request->input('body') : '';
         
         $skpMeeting->id = $data['id'];
         if ($request->file==null & $skpMeeting->lecture_id == '0')
@@ -249,8 +249,15 @@ class MeetingController extends Controller
         $url = $CSA_URL.'/sessions/'.$id;
         $response = Http::withToken(env('TOKEN'))->get($url);
         $attendees = Http::withToken(env('TOKEN'))->get($url.'/enrollments');
+
+        $lecture_id = Meeting::where('id',$response['id'])->pluck('lecture_id')->first();
+        $lecture = $lecture_id <> '0' ? Lecture::where('id', $lecture_id)->first() : null;
+
+        $list_lectures = Lecture::all();
+        $list_users = ListUsers::all();
  
-        return view('detail_meeting', ['meeting' => $response, 'attendees' => $attendees]);
+        return view('detail_meeting', ['meeting' => $response, 'attendees' => $attendees, 
+                    'lecture' => $lecture, 'list_lectures' => $list_lectures, 'list_users' => $list_users]);
     }
 
     /**
@@ -261,10 +268,11 @@ class MeetingController extends Controller
      */
     public function edit($locale, $id)
     {
-        $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
+        /*$CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
         
         $response = Http::withToken(env('TOKEN'))->get($CSA_URL.'/contexts');
-        $lectures = $response ['results'];
+        $lectures = $response ['results'];*/
+        $lectures = Lecture::all();
 
         $lists = ListUsers::all();
 
@@ -279,11 +287,101 @@ class MeetingController extends Controller
      * @param  \App\Models\Meeting  $meeting
      * @return \Illuminate\Http\Response
      */
-    public function update($locale, $id)
-    {
-        //$data = $request->all();
-        //$id->update($data);
-        return "Meeting ".$id." updated";//response()->json($article, 200);
+    public function update($locale, $id, $enrollment, Request $request)
+    {   
+        $CSA_URL = 'https://eu.bbcollab.com/collab/api/csa';
+        if ($enrollment <> 'edit'){
+            Http::withToken(env('TOKEN'))->delete($CSA_URL.'/sessions/'.$id.'/enrollments/'.$enrollment);
+        } else {
+            
+            //Edit meeting in DB
+            $meeting = Meeting::where('id', $id)->first();
+            $meeting->title = $request['title'] <> '' ? $request['title'] : $meeting->title;
+            $meeting->lecture_id = $request['lectureOwner'] <> '0' ? $request['lectureOwner'] : $meeting->lecture_id;
+            $meeting->dateTime = $request['dateTimeStart'] <> '' ? (new DateTime($request->input('dateTimeStart')))->format('c') : $meeting->dateTime;
+            if ($request['list_id'] <> '0' & $request['list_id'] <> $meeting->list_id){
+                $list = ListUsers::where('id',$request['list_id'])->first();
+                $users = json_decode($list['emails_list']);
+                $url = $CSA_URL.'/sessions/'.$id.'/enrollments';
+                
+                //Link users to the meeting
+                foreach($users as $u_id => $email){
+                    $body = array(
+                        "userId" => $u_id,
+                        "launchingRole" => "participant",
+                        "editingPermission" => "reader"
+                    );
+                    $response =  Http::withToken(env('TOKEN'))->post($url,$body);
+    
+                    if ( $meeting->body <> '' ){
+                        $mailDetails = [
+                            'title' => $meeting->title,
+                            'body' => $meeting->body
+                        ];
+                        \Mail::to($email)->send(new \App\Mail\MailSender($mailDetails));
+                    }
+                }
+                $meeting->list_id = $request['list_id'] <> '0' ? $request['list_id'] : $meeting->list_id;
+            }
+            $meeting->save();
+
+            //Edit meeting in API
+            $datetime1 =  $request['dateTimeEnd'] <> '' ? (new DateTime($request->input('dateTimeEnd')))->format('c') : $meeting->dateTime;
+            $body = array(
+                "name"=> $meeting->title,
+                "startTime"=> substr($meeting->dateTime, 0, 19).'.000Z',
+                "endTime"=> substr($datetime1, 0, 19).'.000Z',
+            );
+            $url = $CSA_URL.'/sessions/'.$id;
+            $response = Http::withToken(env('TOKEN'))->patch($url, $body);
+            
+            if ( $request['email']<>""){
+                // Add attendee to the meeting
+                
+                $userId = User::where('email',$request['email'])->pluck('id')->first();
+                if ($userId==null) 
+                {
+                    $fullName = '';
+                    $lastName = '';
+                    if($request['name']<>''){
+                        $fullName = explode(' ',$request['name']);
+                        $lastName = count($fullName) > 1 ? $fullName[1] : 'Unknown';
+                    }
+                    $body = array(
+                        "lastName"=> $lastName,
+                        "firstName"=> $fullName[0],
+                        "displayName"=> $request['name'],
+                        "email"=> $request['email']
+                    );
+                    
+                    $url = $CSA_URL.'/users';
+                    $user = Http::withToken(env('TOKEN'))->post($url,$body);
+                    $userId = $user['id'];
+                    
+                    $skpUser = new User();
+                    $skpUser->name = $request['name']<>'' ? $request['name'] : "Unknown";
+                    $skpUser->email = $request['email'];
+                    $skpUser->id = $userId;
+                    $skpUser->save();
+                }
+                $body = array(
+                    "userId" => $userId,
+                    "launchingRole" => "participant",
+                    "editingPermission" => "reader"
+                );
+                $url = $CSA_URL.'/sessions/'.$id.'/enrollments';
+                $response_user =  Http::withToken(env('TOKEN'))->post($url,$body);
+                
+                if ( $meeting->body <> '' ){
+                    $mailDetails = [
+                        'title' => $meeting->title,
+                        'body' => $meeting->body
+                    ];
+                    \Mail::to($request['email'])->send(new \App\Mail\MailSender($mailDetails));
+                }
+            }
+        }
+        return MeetingController::show($locale, $id);
     }
 
     /**

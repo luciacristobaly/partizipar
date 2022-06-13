@@ -11,7 +11,7 @@
     </div>
     @csrf
     <div class="row p-3">
-        <div class="col-5">
+        <div class="col">
             <label class=" control-label" for="title">@lang('Title')*:</label>
             <input type="text" id="title" name="title" class="form-control" placeholder="@lang('Title')" value="{{ old('title') }}"/>
             {!! $errors->first('title', '<small>:message</small><br>') !!}
@@ -20,11 +20,6 @@
             <label class="control-label" for="image" >@lang('Image'):</label>
             <input type="file" class="form-control" id="image" name="image" value="{{ old('image') }}"/>
             {!! $errors->first('image', '<small>:message</small><br>') !!}
-        </div>
-        <div class="col-4">
-            <label class=" control-label" for="professor">@lang('Professor')*:</label>
-            <input type="text" id="professor" name="professor" class="form-control" placeholder="@lang('Professor')" value="{{ old('professor') }}"/> 
-            {!! $errors->first('professor', '<small>:message</small><br>') !!}
         </div>
     </div>
     <div class="row p-3">
@@ -46,7 +41,7 @@
     <div class="row p-3">
         <div class="col">
             <div class="row form-group text-center float-left">
-                <a href="/lectures" id="cancel" name="cancel" class="btn btn-outline-secondary">@lang('CANCEL')</a>
+                <a href="{{ route('lectures', app()->getLocale()) }}" id="cancel" name="cancel" class="btn btn-outline-secondary">@lang('CANCEL')</a>
             </div>
         </div>
         <div class="col">
