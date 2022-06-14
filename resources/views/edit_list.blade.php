@@ -10,7 +10,7 @@
 <div class="row"> 
     <div class="col">
         <a class="text-white" href="#new_name" data-toggle="collapse">
-            <h3> {{ $list['title'] }}</h3>
+            <h3> {{ $list['title'] }} <i class="fa fa-pencil pencil-icon pr-1 text-white"></i></h3>
         </a>
             <div class="collapse p-3" id="new_name">
                 <div class="row">
@@ -66,7 +66,7 @@
     </div>
 @endif
 <div class="footer">
-    <button onclick="history.back(-1)" id="back" name="back" class="btn btn-outline-secondary">@lang('GO BACK')</button>
+    <a href="{{ route('lists', [app()->getLocale()]) }}" id="back" name="back" class="btn btn-outline-secondary">@lang('GO BACK')</a>
 </div>
 
 @endsection

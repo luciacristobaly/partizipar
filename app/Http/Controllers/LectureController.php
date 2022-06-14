@@ -171,8 +171,40 @@ class LectureController extends Controller
         //Edit lecture in DB
         $lecture = Lecture::where('id', $id)->first();
         $lecture->title = $request['title'] <> '' ? $request['title'] : $lecture->title;
-        $lecture->save();
+        
+        //Update the list
+        if($request['list_id'] <> '0' & $request['list_id'] <> $lecture->list_id){
+            $lecture->list_id = $request['list_id'];
+            $list = ListUsers::where('id',$request['list_id'])->first();
+            $users = json_decode($list['emails_list']);
+            $meetings = Meeting::where('lecture_id', $id)->pluck('id');
+           
+            $users_in_lecture = UserLecture::where('lecture_id', $id)->pluck('id');
+            //Link users to the lecture
+            foreach($users as $userId => $email){
+                //Check wether the user is already attached
+                if (!$users_in_lecture->contains($userId)){
+                    
+                    $user = new UserLecture();
+                    $user->lecture_id = $id;
+                    $user->user_id = $userId;
+                    $user->isTeacher = false;
+                    $user->save();
 
+                    foreach($meetings as $meetingId){
+                        $url = $CSA_URL.'/sessions/'.$meetingId.'/enrollments';
+                        $body = array(
+                            "userId" => $userId,
+                            "launchingRole" => "participant",
+                            "editingPermission" => "reader"
+                        );
+                        $response_user =  Http::withToken(env('TOKEN'))->post($url,$body);
+                    }
+                
+                }
+            }
+        }
+        $lecture->save();
         return LectureController::show($locale, $id);
     }
 

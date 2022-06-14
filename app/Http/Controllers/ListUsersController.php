@@ -78,30 +78,19 @@ class ListUsersController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\List  $list
-     * @return \Illuminate\Http\Response
-     */
-    public function show()//List $list)
-    {
-        //
-    }
-
-    /**
      * Show the form for editing the specified resource.
      *
      * @param  \App\Models\List  $list
      * @return \Illuminate\Http\Response
      */
-    public function edit($locale, $id)//List $list)
+    public function edit($locale, $id)
     {
         $list = ListUsers::where('id', $id)->first();
         $users = array();
-        foreach (json_decode($list->emails_list) as $id=>$email)
+        foreach (json_decode($list->emails_list) as $user_id=>$email)
         {
             $firstName = User::where('email',$email)->pluck('name')->first();
-            $displayName =  Http::withToken(env('TOKEN'))->get('https://eu.bbcollab.com/collab/api/csa/users/'.$id);
+            $displayName =  Http::withToken(env('TOKEN'))->get('https://eu.bbcollab.com/collab/api/csa/users/'.$user_id);
             $name = $firstName <> "Unknown" ? $firstName : $displayName['displayName']; 
             $users[$email] = $name;
         }
@@ -142,6 +131,7 @@ class ListUsersController extends Controller
             foreach ($id_lectures as $id_lect) 
             {
                 $m = Meeting::where('lecture_id', $id_lect)->pluck('id');
+                $m = $m->diff($id_meetings);
                 $id_meetings = $id_meetings->concat($m);
             }
 
@@ -207,6 +197,7 @@ class ListUsersController extends Controller
                     foreach ($id_lectures as $id_lect) 
                     {
                         $m = Meeting::where('lecture_id', $id_lect)->pluck('id');
+                        $m = $m->diff($id_meetings);
                         $id_meetings = $id_meetings->concat($m);
                     }
 

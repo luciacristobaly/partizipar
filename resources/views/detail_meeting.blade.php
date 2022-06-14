@@ -123,7 +123,7 @@
         </div>
     @endif
     <div class="footer">
-    <a href="{{ htmlspecialchars($_SERVER['HTTP_REFERER']) }}" id="cancel" name="cancel" class="btn btn-outline-secondary">@lang('GO BACK')</a>
+    <a href="{{ route('home', [app()->getLocale()]) }}" id="cancel" name="cancel" class="btn btn-outline-secondary">@lang('GO BACK')</a>
     </div>
 </form>
 
