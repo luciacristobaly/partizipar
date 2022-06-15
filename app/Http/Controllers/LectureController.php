@@ -214,7 +214,7 @@ class LectureController extends Controller
      * @param  \App\Models\Lecture  $lecture
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($locale,$id)
     {
 
         //Delete meetings in the lecture
@@ -225,15 +225,16 @@ class LectureController extends Controller
             Meeting::find($meetingId)->delete();
         }
 
-        //Delete lecture
+        //Delete enrollments to the lecture
         while (null != $userLect = UserLecture::where('lecture_id',$id)->first()) 
         {
             $userLect->delete();
         } 
-
-        $lecture = Lecture::find($id);
+        
+        //Delete lecture
+        $lecture = Lecture::where('id',$id);
         $lecture->delete();
 
-        return redirect()->route('lectures');
+        return redirect()->route('lectures', $locale);
     }
 }

@@ -84,7 +84,7 @@
             </div>
         </div>
         <div class="col">
-        <div class="form-group text-center float-right">
+            <div class="form-group text-center float-right">
                 <button class="btn btn-outline-primary" name="submit" type="submit">@lang('ACCEPT')</button>
             </div>
         </div>

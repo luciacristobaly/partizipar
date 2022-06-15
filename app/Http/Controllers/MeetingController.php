@@ -296,10 +296,20 @@ class MeetingController extends Controller
             }
             
             if ($request['list_id'] <> '0' & $request['list_id'] <> $meeting->list_id){
-                $users_in_list = ListUsers::where('id',$request['list_id'])->pluck('emails_list')->first()->toArray();
-                $users_in_list = $users_in_list->diff($users);
-                $users = $users->concat($users_in_list);
-
+                $users_in_list_tmp = explode(',',ListUsers::where('id',$request['list_id'])->pluck('emails_list')->first());
+                $users_in_list_tmp = str_replace('"','',$users_in_list_tmp);
+                $users_in_list = array();
+                foreach(  $users_in_list_tmp as $u){
+                    $tmp = str_replace('{','',$u);
+                    $tmp = explode( ',', $tmp );
+                    foreach($tmp as $t){
+                        $t = explode(':', $t);
+                        $users_in_list[ $t[0] ] = $t[1];
+                    }
+                    
+                }
+                $users_in_list = array_diff($users_in_list, $users);
+                $users = array_merge($users,$users_in_list);
                 $meeting->list_id = $request['list_id'];
             }
             $meeting->save();
@@ -312,7 +322,7 @@ class MeetingController extends Controller
                 "endTime"=> substr($datetime1, 0, 19).'.000Z',
             );
             $url = $CSA_URL.'/sessions/'.$id;
-            //$response = Http::withToken(env('TOKEN'))->patch($url, $body);
+            $response = Http::withToken(env('TOKEN'))->patch($url, $body);
             
             if ( $request['email']<>""){
                 // Add attendee to the meeting
@@ -344,7 +354,7 @@ class MeetingController extends Controller
                     $skpUser->id = $userId;
                     $skpUser->save();
                 }
-
+                
                 $users[$userId] = $request['email'];
             }
 
@@ -357,7 +367,7 @@ class MeetingController extends Controller
                 );
                 $url = $CSA_URL.'/sessions/'.$id.'/enrollments';
                 $response =  Http::withToken(env('TOKEN'))->post($url,$body);
-
+                
                 if ( $meeting->body <> '' ){
                     $mailDetails = [
                         'title' => $meeting->title,
