@@ -34,7 +34,11 @@
                     </div>
                 </div> 
             @empty
-                <h4> @lang("You don't have any meeting programmed").</h4>
+            <div class="row">
+                <div class="col text-center">
+                    <p> @lang("You don't have any meeting programmed").</p>
+                </div>
+            </div>
             @endforelse
             </div>
         </div>

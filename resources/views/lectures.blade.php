@@ -35,7 +35,9 @@
                     </div>
                 </div> 
             @empty
-                <h4> Nothing to show yet.</h4>
+            <div class="row text-center">
+                <div class="col">
+                    <p> @lang('Nothing to show yet').</p>
             @endforelse
             </div>
         </div>

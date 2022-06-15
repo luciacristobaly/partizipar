@@ -69,7 +69,7 @@
 @else
 <div class="row text-center">
     <div class="col">
-        <h4>@lang("There's nothing here yet... Let's create your first list!")</h4>
+        <h4>@lang("There's nothing here yet... Let's make your first list!")</h4>
     </div>
 </div>
 @endif

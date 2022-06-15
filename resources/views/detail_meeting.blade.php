@@ -128,7 +128,7 @@
         <div class="col">
             <a href="{{ route('home', [app()->getLocale()]) }}" id="cancel" name="cancel" class="btn btn-outline-secondary">@lang('GO BACK')</a>
         </div>
-        <div class="col text-center float-right">
+        <div class="col">
             <a class="btn btn-md btn-danger text-white" href="javascript:;" data-toggle="modal" data-id="$meeting->id" data-target="#DeleteMeetingModal">
                 @lang('DELETE')<i class="text-white fa fa-trash trash-icon pl-1"></i>
             </a>
